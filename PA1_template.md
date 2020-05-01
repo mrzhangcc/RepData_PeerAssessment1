@@ -22,41 +22,21 @@ Loading and preprocessing the data
 What is mean total number of steps taken per day?
 -------------------------------------------------
 
-    dates <- as.factor(activity$date)
-    startDate <- as.Date("2012-10-01")
-    total <- activity %>%
-        group_by(date) %>%
-        summarize(t = sum(steps, na.rm = TRUE)) %>%
-        mutate(days = as.numeric(date - startDate) + 1)
-    totalCount <- vector()
-    for (i in 1:nrow(total)) {
-        totalCount <- c(totalCount, rep(total[[i, "days"]], total[[i, "t"]]))
-    }
+    total <- tapply(activity$steps, activity$date, sum, na.rm = TRUE)
 
 Make a histogram of the total number of steps taken each day
 
-    hist(totalCount, breaks = nrow(total), xlab = "Day", main = "Everyday Total Steps")
+    hist(total, breaks = 30, xlab = "Steps", main = "Histogram of Everyday Total Steps")
 
 ![](/Users/chuangchuangzhang/Documents/Freelancer/publab/R/RepData/PA1_template_files/figure-markdown_strict/unnamed-chunk-2-1.png)
 
 Calculate and report the mean and median of the total number of steps
 taken per day
 
-    total1 <- activity %>%
-        subset(!is.na(steps)) %>%
-        group_by(date) %>%
-        summarize(mean = mean(steps), median = median(steps))
-    head(total1)
+    summary(total)
 
-    # A tibble: 6 x 3
-      date         mean median
-      <date>      <dbl>  <dbl>
-    1 2012-10-02  0.438      0
-    2 2012-10-03 39.4        0
-    3 2012-10-04 42.1        0
-    4 2012-10-05 46.2        0
-    5 2012-10-06 53.5        0
-    6 2012-10-07 38.2        0
+       Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+          0    6778   10395    9354   12811   21194 
 
 What is the average daily activity pattern?
 -------------------------------------------
@@ -64,16 +44,20 @@ What is the average daily activity pattern?
 Make a time series plot of the 5-minute interval (x-axis) and the
 average number of steps taken, averaged across all days (y-axis)
 
-    activity1 <- activity %>%
-        mutate(datetime = `minute<-`(date, interval)) %>%
-        filter(!is.na(steps))
-    with(activity1, plot(datetime, steps, type = "l", 
-                         xlab = "Datetime", ylab = "Steps",
-                         main = "Every Five Minutes Steps"))
-    abline(v = activity1[[max(activity1$steps, na.rm = TRUE), 'datetime']], 
+    activityAvg <- activity %>% 
+      group_by(interval) %>%
+      summarize(steps = mean(steps, na.rm = TRUE))
+    with(activityAvg, plot(interval, steps, type = "l", 
+                         xlab = "Interval", ylab = "Steps",
+                         main = "Interval Steps"))
+    abline(v = activityAvg[[which.max(activityAvg$steps), 'interval']], 
            col = "red", lwd = 4)
 
 ![](/Users/chuangchuangzhang/Documents/Freelancer/publab/R/RepData/PA1_template_files/figure-markdown_strict/step3-1.png)
+
+    activityAvg[[which.max(activityAvg$steps), 'interval']]
+
+    [1] 835
 
 Imputing missing values
 -----------------------
@@ -92,45 +76,31 @@ Filled the missing data
         summarize(m = mean(steps, na.rm = TRUE))
     dayMeans[is.nan(dayMeans$m), 'm'] <- 0
     activityMissing <- activity
-    activityMissing$steps <- apply(as.matrix(activityMissing), 1, function(x) {
+    activityMissing$steps <- apply(as.matrix(activity), 1, function(x) {
         if (is.na(x[1])) {
-            dayMeans[dayMeans$date == x[2], 'm'][[1, 'm']]
+            activityAvg[activityAvg$interval == as.integer(x[3]), 'steps'][[1, 'steps']]
         } else {
-            as.numeric(x[1])
+            as.integer(x[1])
         }
     })
 
 Make a histogram of the total number of steps taken each day
 
-    total <- activityMissing %>%
-        group_by(date) %>%
-        summarize(t = sum(steps, na.rm = TRUE)) %>%
-        mutate(days = as.numeric(date - startDate) + 1)
-    totalCount <- vector()
-    for (i in 1:nrow(total)) {
-        totalCount <- c(totalCount, rep(total[[i, "days"]], total[[i, "t"]]))
-    }
-    hist(totalCount, breaks = nrow(total), xlab = "Day", main = "Filled Missing Data, Everyday Total Steps")
+    total <- tapply(activityMissing$steps, activityMissing$date, sum)
 
-![](/Users/chuangchuangzhang/Documents/Freelancer/publab/R/RepData/PA1_template_files/figure-markdown_strict/unnamed-chunk-5-1.png)
+Make a histogram of the total number of steps taken each day
 
-Calculate and report the mean and median total number of steps taken per
-day
+    hist(total, breaks = 30, xlab = "Steps", main = "Filled Missing Data, Histogram of Everyday Total Steps")
 
-    total1 <- activityMissing %>%
-        group_by(date) %>%
-        summarize(mean = mean(steps), median = median(steps))
-    head(total1)
+![](/Users/chuangchuangzhang/Documents/Freelancer/publab/R/RepData/PA1_template_files/figure-markdown_strict/unnamed-chunk-6-1.png)
 
-    # A tibble: 6 x 3
-      date         mean median
-      <date>      <dbl>  <dbl>
-    1 2012-10-01  0          0
-    2 2012-10-02  0.438      0
-    3 2012-10-03 39.4        0
-    4 2012-10-04 42.1        0
-    5 2012-10-05 46.2        0
-    6 2012-10-06 53.5        0
+Calculate and report the mean and median of the total number of steps
+taken per day after filling missing data
+
+    summary(total)
+
+       Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+         41    9819   10766   10766   12811   21194 
 
 Are there differences in activity patterns between weekdays and weekends?
 -------------------------------------------------------------------------
@@ -142,13 +112,13 @@ day
     allWeekdays <- c(2:6)
     activityMissing$w <- factor(wday(activityMissing$date) %in% allWeekdays,
                                 level = c(FALSE, TRUE), labels = c("weekend", "weekday"))
-    activityMissing <- activityMissing %>%
-        group_by(w) %>%
-        mutate(x = 1:n())
+    activityMissingWeek <- activityMissing %>%
+        group_by(w, interval) %>%
+        summarize(steps = mean(steps))
 
 Make a panel plot containing a time series plot
 
-    ggplot(activityMissing, aes(x, steps)) +
+    ggplot(activityMissingWeek, aes(interval, steps)) +
         geom_line(color = "blue") +
         facet_wrap(facets = vars(w), nrow = 2) +
         xlab("Interval") +
@@ -156,4 +126,4 @@ Make a panel plot containing a time series plot
         theme(strip.background = element_rect(fill = "orange"), 
               panel.spacing = unit(0, "lines"))
 
-![](/Users/chuangchuangzhang/Documents/Freelancer/publab/R/RepData/PA1_template_files/figure-markdown_strict/unnamed-chunk-7-1.png)
+![](/Users/chuangchuangzhang/Documents/Freelancer/publab/R/RepData/PA1_template_files/figure-markdown_strict/unnamed-chunk-8-1.png)

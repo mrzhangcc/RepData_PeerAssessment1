@@ -26,43 +26,32 @@ activity$date <- as.Date(as.character(activity$date), "%Y-%m-%d")
 ## What is mean total number of steps taken per day?
 
 ```{r step2, echo = TRUE}
-dates <- as.factor(activity$date)
-startDate <- as.Date("2012-10-01")
-total <- activity %>%
-    group_by(date) %>%
-    summarize(t = sum(steps, na.rm = TRUE)) %>%
-    mutate(days = as.numeric(date - startDate) + 1)
-totalCount <- vector()
-for (i in 1:nrow(total)) {
-    totalCount <- c(totalCount, rep(total[[i, "days"]], total[[i, "t"]]))
-}
+total <- tapply(activity$steps, activity$date, sum, na.rm = TRUE)
 ```
 Make a histogram of the total number of steps taken each day
 ```{r, echo = TRUE}
-hist(totalCount, breaks = nrow(total), xlab = "Day", main = "Everyday Total Steps")
+hist(total, breaks = 30, xlab = "Steps", main = "Histogram of Everyday Total Steps")
 ```
 
 Calculate and report the mean and median of the total number of steps taken per day
 ```{r, echo = TRUE}
-total1 <- activity %>%
-    subset(!is.na(steps)) %>%
-    group_by(date) %>%
-    summarize(mean = mean(steps), median = median(steps))
-head(total1)
+summary(total)
 ```
 
 ## What is the average daily activity pattern?
 
 Make a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 ```{r step3, echo = TRUE}
-activity1 <- activity %>%
-    mutate(datetime = `minute<-`(date, interval)) %>%
-    filter(!is.na(steps))
-with(activity1, plot(datetime, steps, type = "l", 
-                     xlab = "Datetime", ylab = "Steps",
-                     main = "Every Five Minutes Steps"))
-abline(v = activity1[[max(activity1$steps, na.rm = TRUE), 'datetime']], 
+activityAvg <- activity %>% 
+  group_by(interval) %>%
+  summarize(steps = mean(steps, na.rm = TRUE))
+with(activityAvg, plot(interval, steps, type = "l", 
+                     xlab = "Interval", ylab = "Steps",
+                     main = "Interval Steps"))
+abline(v = activityAvg[[which.max(activityAvg$steps), 'interval']], 
        col = "red", lwd = 4)
+
+activityAvg[[which.max(activityAvg$steps), 'interval']]
 ```
 
 ## Imputing missing values
@@ -79,34 +68,27 @@ dayMeans <- activity %>%
     summarize(m = mean(steps, na.rm = TRUE))
 dayMeans[is.nan(dayMeans$m), 'm'] <- 0
 activityMissing <- activity
-activityMissing$steps <- apply(as.matrix(activityMissing), 1, function(x) {
+activityMissing$steps <- apply(as.matrix(activity), 1, function(x) {
     if (is.na(x[1])) {
-        dayMeans[dayMeans$date == x[2], 'm'][[1, 'm']]
+        activityAvg[activityAvg$interval == as.integer(x[3]), 'steps'][[1, 'steps']]
     } else {
-        as.numeric(x[1])
+        as.integer(x[1])
     }
 })
 ```
 
 Make a histogram of the total number of steps taken each day 
 ```{r, echo = TRUE}
-total <- activityMissing %>%
-    group_by(date) %>%
-    summarize(t = sum(steps, na.rm = TRUE)) %>%
-    mutate(days = as.numeric(date - startDate) + 1)
-totalCount <- vector()
-for (i in 1:nrow(total)) {
-    totalCount <- c(totalCount, rep(total[[i, "days"]], total[[i, "t"]]))
-}
-hist(totalCount, breaks = nrow(total), xlab = "Day", main = "Filled Missing Data, Everyday Total Steps")
+total <- tapply(activityMissing$steps, activityMissing$date, sum)
+```
+Make a histogram of the total number of steps taken each day
+```{r, echo = TRUE}
+hist(total, breaks = 30, xlab = "Steps", main = "Filled Missing Data, Histogram of Everyday Total Steps")
 ```
 
-Calculate and report the mean and median total number of steps taken per day
+Calculate and report the mean and median of the total number of steps taken per day after filling missing data
 ```{r, echo = TRUE}
-total1 <- activityMissing %>%
-    group_by(date) %>%
-    summarize(mean = mean(steps), median = median(steps))
-head(total1)
+summary(total)
 ```
 
 ## Are there differences in activity patterns between weekdays and weekends?
@@ -116,14 +98,14 @@ Create a new factor variable in the dataset with two levels – “weekday” an
 allWeekdays <- c(2:6)
 activityMissing$w <- factor(wday(activityMissing$date) %in% allWeekdays,
                             level = c(FALSE, TRUE), labels = c("weekend", "weekday"))
-activityMissing <- activityMissing %>%
-    group_by(w) %>%
-    mutate(x = 1:n())
+activityMissingWeek <- activityMissing %>%
+    group_by(w, interval) %>%
+    summarize(steps = mean(steps))
 ```
 
 Make a panel plot containing a time series plot
 ```{r, echo = TRUE}
-ggplot(activityMissing, aes(x, steps)) +
+ggplot(activityMissingWeek, aes(interval, steps)) +
     geom_line(color = "blue") +
     facet_wrap(facets = vars(w), nrow = 2) +
     xlab("Interval") +
