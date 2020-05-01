@@ -441,8 +441,12 @@ activityMissing$steps &lt;- apply(as.matrix(activity), 1, function(x) {
 <div id="are-there-differences-in-activity-patterns-between-weekdays-and-weekends" class="section level2">
 <h2>Are there differences in activity patterns between weekdays and weekends?</h2>
 <p>Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day</p>
+<<<<<<< HEAD
 <pre class="r"><code>allWeekdays &lt;- c(2:6)
 activityMissing$w &lt;- factor(wday(activityMissing$date) %in% allWeekdays,
+=======
+<pre class="r"><code>activityMissing$w &lt;- factor(wday(activityMissing$date) %in% allWeekdays,
+>>>>>>> 3fb40846840b9bfd7646e690a16b8b21f809e53c
                             level = c(FALSE, TRUE), labels = c(&quot;weekend&quot;, &quot;weekday&quot;))
 activityMissingWeek &lt;- activityMissing %&gt;%
     group_by(w, interval) %&gt;%

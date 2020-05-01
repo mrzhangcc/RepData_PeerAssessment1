@@ -109,7 +109,6 @@ Create a new factor variable in the dataset with two levels – “weekday”
 and “weekend” indicating whether a given date is a weekday or weekend
 day
 
-    allWeekdays <- c(2:6)
     activityMissing$w <- factor(wday(activityMissing$date) %in% allWeekdays,
                                 level = c(FALSE, TRUE), labels = c("weekend", "weekday"))
     activityMissingWeek <- activityMissing %>%
