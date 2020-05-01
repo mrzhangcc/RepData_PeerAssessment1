@@ -28,7 +28,7 @@ Make a histogram of the total number of steps taken each day
 
     hist(total, breaks = 30, xlab = "Steps", main = "Histogram of Everyday Total Steps")
 
-![](/Users/chuangchuangzhang/Documents/Freelancer/publab/R/RepData/PA1_template_files/figure-markdown_strict/unnamed-chunk-2-1.png)
+![](PA1_template_files/figure-markdown_strict/unnamed-chunk-2-1.png)
 
 Calculate and report the mean and median of the total number of steps
 taken per day
@@ -53,7 +53,7 @@ average number of steps taken, averaged across all days (y-axis)
     abline(v = activityAvg[[which.max(activityAvg$steps), 'interval']], 
            col = "red", lwd = 4)
 
-![](/Users/chuangchuangzhang/Documents/Freelancer/publab/R/RepData/PA1_template_files/figure-markdown_strict/step3-1.png)
+![](PA1_template_files/figure-markdown_strict/step3-1.png)
 
     activityAvg[[which.max(activityAvg$steps), 'interval']]
 
@@ -92,7 +92,7 @@ Make a histogram of the total number of steps taken each day
 
     hist(total, breaks = 30, xlab = "Steps", main = "Filled Missing Data, Histogram of Everyday Total Steps")
 
-![](/Users/chuangchuangzhang/Documents/Freelancer/publab/R/RepData/PA1_template_files/figure-markdown_strict/unnamed-chunk-6-1.png)
+![](PA1_template_files/figure-markdown_strict/unnamed-chunk-6-1.png)
 
 Calculate and report the mean and median of the total number of steps
 taken per day after filling missing data
@@ -109,6 +109,7 @@ Create a new factor variable in the dataset with two levels – “weekday”
 and “weekend” indicating whether a given date is a weekday or weekend
 day
 
+    allWeekdays <- c(2:6)
     activityMissing$w <- factor(wday(activityMissing$date) %in% allWeekdays,
                                 level = c(FALSE, TRUE), labels = c("weekend", "weekday"))
     activityMissingWeek <- activityMissing %>%
@@ -125,4 +126,4 @@ Make a panel plot containing a time series plot
         theme(strip.background = element_rect(fill = "orange"), 
               panel.spacing = unit(0, "lines"))
 
-![](/Users/chuangchuangzhang/Documents/Freelancer/publab/R/RepData/PA1_template_files/figure-markdown_strict/unnamed-chunk-8-1.png)
+![](PA1_template_files/figure-markdown_strict/unnamed-chunk-8-1.png)
